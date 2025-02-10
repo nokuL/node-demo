@@ -1,5 +1,7 @@
 const HttpError = require('../models/http-error');
 const { v4: uuid } = require('uuid');
+const { validationResult } = require('express-validator');
+const e = require('express');
 
 let DUMMY_PLACES = [{
     id: 'p1',
@@ -14,15 +16,15 @@ let DUMMY_PLACES = [{
 }]
 const getPlaceById = (req, res, next) => {
     const placeId = req.params.pid;
-    const place = DUMMY_PLACES.find(p => {
+    const places = DUMMY_PLACES.filter(p => {
         return placeId === p.id;
     })
 
-    if (!place) {
+    if (!places || places.length ===0) {
 
         throw new HttpError('An error occurred fetching place using place id', 404);
     }
-    res.json({ place }); //{place:place}}
+    res.json({ places }); //{place:place}}
 }
 
 const getPlaceByUserId = (req, res, next) => {
@@ -36,6 +38,10 @@ const getPlaceByUserId = (req, res, next) => {
 }
 
 const createPlace = (req, res, next) => {
+   const errors =  validationResult(req);
+   if(!errors.isEmpty()){
+         throw new HttpError('Invalid inputs passed, please check your data', 422);
+   }
     const { title, description, coordinates, address, creator } = req.body;
     const createdPlace = {
         id: uuid(),
@@ -50,6 +56,7 @@ const createPlace = (req, res, next) => {
 }
 
 const patchPlace = (req, res, next) => {
+    validationResult(req);
     const { title, description } = req.body;
     const placeId = req.params.pid;
     const updatedPlace = { ...DUMMY_PLACES.find(p => p.id === placeId) };
